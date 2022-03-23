@@ -55,6 +55,10 @@ ruta_output=ruta+'\Output'
 
 import pandas as pd
 
+# Importar librería dbfread
+
+from dbfread import DBF
+
 '''
         ETAPA 1: Definir variables para remuneración
 
@@ -147,27 +151,61 @@ pad_cont.rename(columns={'Código Modular':'cod_mod'},inplace=True)
 
 # Importar base Integrada
 
-bas_int=pd.read_stata(ruta_input+'/base_integrada_cod_mod.dta',)
+#bas_int=pd.read_stata(ruta_input+'/base_integrada_cod_mod.dta')
 
 # Filtrar para estado igual a activa IE
 
-bas_int = bas_int[bas_int.d_estado == 'Activa']
+#bas_int = bas_int[bas_int.d_estado == 'Activa']
 
 # Establecer df con variables de interés
 
-bas_int_i=bas_int[['cod_mod','codooii','codlocal','anexo','cen_edu']]
+#bas_int_i=bas_int[['cod_mod','codooii','codlocal','anexo','cen_edu']]
 
 # Verificar tipo de variables
 
-print(bas_int_i.dtypes)
+#print(bas_int_i.dtypes)
 
 # Pasar a integer
 
-bas_int_i.cod_mod=bas_int_i.cod_mod.astype(int)
+#bas_int_i.cod_mod=bas_int_i.cod_mod.astype(int)
+
+# Importar Padrón web
+
+# Generar DBF
+
+b_dbf=DBF(ruta_input+'/Padron_web_20220314.dbf')
+
+# Generar dataframe
+
+pad_web = pd.DataFrame(iter(b_dbf))
+
+# Filtrar para estado igual a activa IE
+
+pad_web = pad_web[pad_web.D_ESTADO == 'Activa']
+
+# Establecer df con variables de interés
+
+pad_web_i=pad_web[['COD_MOD','CODOOII','CODLOCAL','ANEXO','CEN_EDU']]
+
+# Verificar tipo de variables
+
+print(pad_web_i.dtypes)
+
+# Pasar a integer
+
+pad_web_i.COD_MOD=pad_web_i.COD_MOD.astype(int)
+
+# Renombrar variables
+
+pad_web_i.rename(columns={'COD_MOD':'cod_mod'},inplace=True)
+pad_web_i.rename(columns={'CODOOII':'codooii'},inplace=True)
+pad_web_i.rename(columns={'CODLOCAL':'codlocal'},inplace=True)
+pad_web_i.rename(columns={'ANEXO':'anexo'},inplace=True)
+pad_web_i.rename(columns={'CEN_EDU':'cen_edu'},inplace=True)
 
 # Combinar bases usando inner
 
-cont_int=pd.merge(pad_cont, bas_int_i, on ='cod_mod', how ='inner')
+cont_int=pd.merge(pad_cont, pad_web_i, on ='cod_mod', how ='inner')
 
 # Renombrar variables
 
@@ -227,7 +265,7 @@ bas_air = bas_air.fillna(0)
 
 print(bas_air.dtypes)
 
-# Pasar a integer
+# Pasar a int
 
 bas_air.n_coor_cont=bas_air.n_coor_cont.astype(int)
 bas_air.n_coci_cont=bas_air.n_coci_cont.astype(int)
@@ -856,7 +894,7 @@ b_ugel_ri = b_ugel.reset_index()
 
 # Usar melt para pasar a long (reshape long)
 
-b_ugel_long=pd.melt(b_ugel_ri, id_vars=['cod_pliego', 'cod_ue', 'cod_ugel','nom_pliego','nom_ue','ugel'], value_vars=['name1_13','name1_1','name1_2','name1_3','name1_4','name1_5','name1_6','name1_7','name1_8','name1_9','name1_10','name1_11','name1_12','name2_13','name2_1','name2_2','name2_3','name2_4','name2_5','name2_6','name2_7','name2_8','name2_9','name2_10','name2_11','name2_12','name3_13','name3_1','name3_2','name3_3','name3_4','name3_5','name3_6','name3_7','name3_8','name3_9','name3_10','name3_11','name3_12'], var_name='s', value_name='name')
+b_ugel_long=pd.melt(b_ugel_ri, id_vars=['cod_pliego', 'cod_ue', 'cod_ugel','nom_pliego','nom_ue','ugel'], value_vars=b_ugel_ri.columns[[x.startswith('name') for x in b_ugel_ri.columns]].tolist(), var_name='s', value_name='name')
 
 # Quitar el índice
 
